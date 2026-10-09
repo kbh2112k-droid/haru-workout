@@ -1,0 +1,25 @@
+# 의존성 및 빌드 결과
+node_modules/
+dist/
+build/
+.next/
+.wrangler/
+.openai/
+# 비밀 설정
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+# 임시 파일
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+# 개인 데이터 및 백업
+*.sqlite
+*.sqlite3
+*.db
+*.bak
