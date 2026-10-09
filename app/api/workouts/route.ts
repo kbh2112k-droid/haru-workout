@@ -1,0 +1,9 @@
+import {workoutDb} from "@/lib/workouts";
+export const dynamic="force-dynamic";
+export async function GET(){try{const {results}=await workoutDb().prepare("SELECT id,kind,date,minutes FROM workouts ORDER BY date DESC,created_at DESC").all();return Response.json({records:results},{headers:{"Cache-Control":"no-store"}});}catch(e){console.error("Workouts load failed",e);return Response.json({error:"기록을 불러오지 못했어요."},{status:503});}}
+export async function POST(request:Request){
+ if(request.headers.get("Origin")&&new URL(request.headers.get("Origin")!).origin!==new URL(request.url).origin)return Response.json({error:"잘못된 요청이에요."},{status:403});
+ let input:any;try{input=await request.json();}catch{return Response.json({error:"입력 내용을 확인해 주세요."},{status:400});}
+ if(!input||!["walk","run","strength","bike"].includes(input.kind)||typeof input.date!=="string"||!/^\d{4}-\d{2}-\d{2}$/.test(input.date)||!Number.isInteger(input.minutes)||input.minutes<1||input.minutes>1440||typeof input.id!=="string"||! /^[a-f0-9-]{36}$/i.test(input.id))return Response.json({error:"운동 종류, 날짜와 1~1440분 사이의 시간을 입력해 주세요."},{status:400});
+ const d=new Date(input.date+"T00:00:00Z");if(!Number.isFinite(d.getTime())||d.toISOString().slice(0,10)!==input.date||d.getTime()>Date.now()+86400000)return Response.json({error:"운동한 날짜를 올바르게 입력해 주세요."},{status:400});
+ try{const record={id:input.id,kind:input.kind,date:input.date,minutes:input.minutes};await workoutDb().prepare("INSERT INTO workouts (id,kind,date,minutes,created_at) VALUES (?,?,?,?,?) ON CONFLICT(id) DO NOTHING").bind(record.id,record.kind,record.date,record.minutes,new Date().toISOString()).run();return Response.json({record},{status:201});}catch(e){console.error("Workout save failed",e);return Response.json({error:"기록을 저장하지 못했어요. 입력 내용은 그대로 두었으니 다시 시도해 주세요."},{status:503});}}
